@@ -2,8 +2,8 @@
 // angle_range: 10~170 
 Servo servo1;
 int PIN = 10;
-int angle = 0;
-int angle_0 = 360;
+int angle = 90;
+int angle_0 = 90;
 
 void setup() {
   Serial.begin(9600);
