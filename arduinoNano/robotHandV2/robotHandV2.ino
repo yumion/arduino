@@ -4,6 +4,13 @@
 PCA9685 pwm = PCA9685(0x40);    //PCA9685のアドレス指定（アドレスジャンパ未接続時）
 #define SERVOMIN 150            //最小パルス幅 (標準的なサーボパルスに設定)
 #define SERVOMAX 600            //最大パルス幅 (標準的なサーボパルスに設定)
+// サーボのチャンネル
+#define LEFT_WHEEL 0
+#define RIGHT_WHEEL 1
+#define HORIZON 2
+#define VERTICAL 3
+#define WRIST 4
+#define GRASP 5
 
 void setup() {
   Serial.begin(9600);
@@ -15,20 +22,16 @@ int l = 0;
 int n = 0;
 int orn = 2;
 void loop() {
-  for(int i=4;i<16;i++){
-    servo_write(i, n);
-  }
-  servo_write(3, 140);
-  rack_pinion(2, l);
-  rc_servo(0, orn);
-  rc_servo(1, -orn+1);
-  l=l+1;
-  if(l==30) l=0;
-  n=n+10;
-  if(n==180) n=0;
-//  orn=orn+1;
-//  if(orn==2) orn=0;
-  delay(200);
+  delay(2000);
+  servo_write(GRASP, 80);
+  servo_write(WRIST, 60);
+  rack_pinion(HORIZON, 15);
+  servo_write(VERTICAL, 140);
+  rc_servo(LEFT_WHEEL, orn);
+  rc_servo(RIGHT_WHEEL, -orn+1);
+  delay(2000);
+  servo_write(GRASP, 170);
+  servo_write(VERTICAL, 60);
 }
 
 void servo_write(int ch, int ang){ //動かすサーボチャンネルと角度を指定
