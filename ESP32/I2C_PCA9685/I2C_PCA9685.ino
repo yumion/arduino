@@ -12,26 +12,51 @@ PCA9685 pwm = PCA9685(0x40);    //PCA9685のアドレス指定（アドレスジ
 #define WRIST 4
 #define GRASP 5
 
+// グローバル変数として持つ必要あり
+char input[10];  // 文字列格納用
+//int i = 0;      // 文字数のカウンタ
+int val = 0;    // 受信した数値
+
+
+void serialVal(int i){
+    // データ受信した場合の処理
+  if (Serial.available()) {
+    input[i] = Serial.read();
+     // 末尾文字がある場合の処理
+    if (input[i] == '\0') { i = 0; }
+    else { i++; }
+  }
+}
+
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pwm.begin();                   //初期設定 (アドレス0x40用)
   pwm.setPWMFreq(60);            //PWM周期を60Hzに設定 (アドレス0x40用)
 }
 
-int l = 0;
-int n = 0;
-int orn = 2;
+int i = 0;
+String buff;
+int deg = 0;    // サーボの角度
+int ch;    // サーボのチャンネル
+
 void loop() {
   delay(2000);
+
+  buff = Serial.readStringUntil("e");
+  
+  ch = atoi(strtok(buff, ","));
+  deg = atoi(strtok(NULL, ",")); 
+
+  Serial.println(ch);
+  Serial.println(deg);
+  
   servo_write(GRASP, 80);
-  servo_write(WRIST, 60);
-  rack_pinion(HORIZON, 15);
-  servo_write(VERTICAL, 140);
-  rc_servo(LEFT_WHEEL, orn);
-  rc_servo(RIGHT_WHEEL, -orn+1);
-  delay(2000);
-  servo_write(GRASP, 50);
+  servo_write(WRIST, 170);
+//  rack_pinion(HORIZON, 15);
   servo_write(VERTICAL, 60);
+//  rc_servo(LEFT_WHEEL, orn);
+//  rc_servo(RIGHT_WHEEL, -orn+1);
+
 }
 
 void servo_write(int ch, int ang){ //動かすサーボチャンネルと角度を指定
@@ -58,4 +83,3 @@ void rack_pinion(int ch, int distance){
   float ang = map(distance, 0, 15, 0, 65); //最大15mm(65度)移動．角度に変換
   servo_write(ch, ang); //角度指定で動かす
 }
-
