@@ -17,6 +17,8 @@ int channel[6];
 
 void setup() {
   Serial.begin(9600);
+  TCCR2B &= B11111000;
+  TCCR2B |= B00000011;  // r=32の場合
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
   pinMode(BIN1, OUTPUT);
