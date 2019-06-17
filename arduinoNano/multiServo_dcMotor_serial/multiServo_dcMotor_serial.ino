@@ -17,7 +17,7 @@ int channel[6];
 
 void setup() {
   Serial.begin(9600);
-  TCCR2B &= B11111000;
+  TCCR2B &= B11111000;  // 3,11番ピンの周波数を980Hzに変更
   TCCR2B |= B00000011;  // r=32の場合
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
@@ -77,7 +77,6 @@ void loop() {
     if (buf[i] == 'e') {
       buf[i] = '\0';
       //Serial.println(buf);
-
       channel[0] = atoi(strtok(buf, ","));
       for(int n=1; n<6; n++){
         channel[n] = atoi(strtok(NULL, ","));
