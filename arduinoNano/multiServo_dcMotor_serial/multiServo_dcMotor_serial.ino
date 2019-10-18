@@ -13,7 +13,12 @@ int angle;
 int i = 0;
 char buf[30];
 int channel[6];
+void dc_motor(int orn, int speeds=100)
 
+/* sample (default)
+ * 4本指,手首,縦振り,横スライド,タイヤの回転方向,回転スピード 
+ * 80,170,60,90,0,100e
+ */
 
 void setup() {
   Serial.begin(9600);
@@ -27,46 +32,6 @@ void setup() {
   sv2.attach(4);  // pwm
   sv3.attach(7);  // pwm
   sv4.attach(8);  // pwm
-}
-
-
-void dc_motor(int orn, int speeds=100) {
-
-  if(orn ==  0){
-     //Serial.println("正転");
-     analogWrite(AIN1, speeds);  // AIN1:1
-     analogWrite(AIN2, 0);  // AIN2:0
-     analogWrite(BIN1, speeds);  // BIN1:1
-     analogWrite(BIN2, 0);  // BIN2:0
-     }
-  else if(orn == 1){
-        //Serial.println("逆転");
-     analogWrite(AIN1, 0);  // AIN1:0
-     analogWrite(AIN2, speeds);  // AIN2:1
-     analogWrite(BIN1, 0);  // BIN1:0
-     analogWrite(BIN2, speeds);  // BIN2:1
-     }
-  else if(orn == 2){
-       //Serial.println("右周り");
-     analogWrite(AIN1, speeds);  // AIN1:1
-     analogWrite(AIN2, 0);  // AIN2:0
-     analogWrite(BIN1, 0);  // BIN1:0
-     analogWrite(BIN2, speeds);  // BIN2:1  
-    }
-  else if(orn == 3){
-      //Serial.println("左周り");
-     analogWrite(AIN1, 0);  // AIN1:0
-     analogWrite(AIN2, speeds);  // AIN2:1
-     analogWrite(BIN1, speeds);  // BIN1:1
-     analogWrite(BIN2, 0);  // BIN2:0               
-    }
-  else{
-   //Serial.println("空転");
-     analogWrite(AIN1, 0);  // AIN1:0
-     analogWrite(AIN2, 0);  // AIN2:0
-     analogWrite(BIN1, 0);  // BIN1:0
-     analogWrite(BIN2, 0);  // BIN2:0
-  }
 }
 
 
@@ -104,4 +69,43 @@ void loop() {
   delay(50);
 }
 
+
+void dc_motor(int orn, int speeds=100) {
+
+  if(orn ==  0){
+     //Serial.println("正転");
+     analogWrite(AIN1, speeds);
+     analogWrite(AIN2, 0);
+     analogWrite(BIN1, speeds);
+     analogWrite(BIN2, 0);
+     }
+  else if(orn == 1){
+        //Serial.println("逆転");
+     analogWrite(AIN1, 0);
+     analogWrite(AIN2, speeds);
+     analogWrite(BIN1, 0);
+     analogWrite(BIN2, speeds);
+     }
+  else if(orn == 2){
+       //Serial.println("右周り");
+     analogWrite(AIN1, speeds);
+     analogWrite(AIN2, 0);
+     analogWrite(BIN1, 0);
+     analogWrite(BIN2, speeds);
+    }
+  else if(orn == 3){
+      //Serial.println("左周り");
+     analogWrite(AIN1, 0);
+     analogWrite(AIN2, speeds);
+     analogWrite(BIN1, speeds);
+     analogWrite(BIN2, 0);         
+    }
+  else{
+   //Serial.println("空転");
+     analogWrite(AIN1, 0);
+     analogWrite(AIN2, 0);
+     analogWrite(BIN1, 0);
+     analogWrite(BIN2, 0);
+  }
+}
 
