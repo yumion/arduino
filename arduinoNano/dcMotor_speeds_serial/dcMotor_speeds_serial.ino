@@ -1,12 +1,11 @@
-#define AIN1 3
+#define AIN1 3  // 右輪
 #define AIN2 11
-#define BIN1 5
+#define BIN1 5  // 左輪
 #define BIN2 6
 
-int angle;
 int i = 0;
 char buf[30];
-int channel[3];
+int channel[7];
 
 /* sample (default)
  * right wheel, left wheel 
@@ -21,6 +20,36 @@ void setup() {
   pinMode(AIN2, OUTPUT);
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
+}
+
+
+void dc_motor_digital(int r_speeds, int l_speeds, int period=1000) {
+  // IN1
+  digitalWrite(AIN1, LOW);
+  digitalWrite(BIN1, LOW);
+  if (r_speeds > l_speeds) {
+    delay(period - r_speeds);
+    digitalWrite(AIN1, HIGH); 
+    delay(r_speeds - l_speeds);
+    if (l_speeds != 0) {
+     digitalWrite(BIN1, HIGH); 
+    }
+    delay(l_speeds);
+  }
+  else {
+    delay(period - l_speeds);
+    if (r_speeds != 0) {
+     digitalWrite(BIN1, HIGH); 
+    }
+    delay(l_speeds - r_speeds);
+    if (l_speeds != 0) {
+     digitalWrite(AIN1, HIGH); 
+    }
+    delay(r_speeds);
+  }
+  // IN2
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN2, LOW);
 }
 
 
@@ -48,9 +77,9 @@ void loop() {
     }
   }
   /* dc motor */
-  dc_motor(channel[0], channel[1]);
-   
-  delay(50);
+//  dc_motor(channel[0], channel[1]);
+  dc_motor_digital(channel[0], channel[1]);
+
 }
 
 
@@ -60,3 +89,14 @@ void dc_motor(int r_speeds, int l_speeds) {
   analogWrite(BIN1, r_speeds);
   analogWrite(BIN2, 0);
 }
+
+
+void digital_pwm(int pin, float duty, float period=100000) {
+  float duty_rate = duty / 255.0;
+  float pulse_width = period * duty_rate;
+  digitalWrite(pin, LOW);
+  delayMicroseconds(period - pulse_width);
+  digitalWrite(pin, HIGH);
+  delayMicroseconds(pulse_width);
+}
+
