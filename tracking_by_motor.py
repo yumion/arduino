@@ -39,7 +39,6 @@ def calc_area(img):
 
 def calc_center(img):
     '''重心座標(x,y)を求める'''
-    img = red_detect(img)
     mu = cv2.moments(img, False)
     x, y = int(mu["m10"] / (mu["m00"] + 1e-7)
                ), int(mu["m01"] / (mu["m00"] + 1e-7))
@@ -54,6 +53,7 @@ def send_serial(params):
 
 
 cap.start()
+time.sleep(2)
 
 MAX_SPEED = 100
 r_motor = 100
@@ -72,10 +72,14 @@ while True:
     r_motor -= error_distance * MAX_SPEED
     l_motor += error_distance * MAX_SPEED
 
-    params = [r_motor, l_motor]
+    params = f'{r_motor}, {l_motor}e'
     send_serial(params)
+
+    cv2.namedWindow('RGB', cv2.WINDOW_AUTOSIZE)
+    cv2.imshow('RGB', color_frame)
+    cv2.namedWindow('MASK', cv2.WINDOW_AUTOSIZE)
+    cv2.imshow('MASK', mask)
 
     if target_distance < 0.1:
         break
-
     time.sleep(0.2)
