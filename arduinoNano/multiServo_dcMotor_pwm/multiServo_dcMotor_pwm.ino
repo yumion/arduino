@@ -48,11 +48,11 @@ void dc_motor_digital(int r_speeds, int l_speeds, int period=100) {
   }
   else {
     delay(period - l_speeds);
-    if (r_speeds != 0) {
+    if (l_speeds != 0) {
      digitalWrite(BIN1, HIGH); 
     }
     delay(l_speeds - r_speeds);
-    if (l_speeds != 0) {
+    if (r_speeds != 0) {
      digitalWrite(AIN1, HIGH); 
     }
     delay(r_speeds);
