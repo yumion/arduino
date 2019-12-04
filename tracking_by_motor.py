@@ -27,59 +27,64 @@ def red_detect(img):
     return mask1 + mask2
 
 
-def calc_area(img):
-    '''面積計算'''
-    img = red_detect(img)
-    pix_area = cv2.countNonZero(img)  # ピクセル数
-    # パーセントを算出
-    h, w = img.shape  # frameの面積
-    per = round(100 * float(pix_area) / (w * h), 3)  # 0-100で規格化
-    return per
-
-
 def calc_center(img):
     '''重心座標(x,y)を求める'''
     mu = cv2.moments(img, False)
     x, y = int(mu["m10"] / (mu["m00"] + 1e-7)
                ), int(mu["m01"] / (mu["m00"] + 1e-7))
-    # 重心を丸でくくる
-    # cv2.circle(img, (x, y), 4, 100, 2, 4)
     return x, y
 
 
 # シリアル通信
 def send_serial(params):
     ser.write(params.encode('utf-8'))
+    print(f'send: {params}')
 
 
 cap.start()
-time.sleep(2)
+time.sleep(5)
 
 MAX_SPEED = 100
-r_motor = 100
-l_motor = 100
+TARGET_POS = 423
+r_motor = 0
+l_motor = 0
 
 while True:
     ret, frames = cap.read(is_filtered=False)
     color_frame = frames[0]
     depth_frame = frames[1]
 
-    mask = red_detect(color_frame)
+    mask = red_detect(color_frame.copy())
+    mask_pixels = (mask > 0).sum()
+    print('Area: ', mask_pixels / (mask.shape[0] * mask.shape[1]))
     center_pos_x, center_pos_y = calc_center(mask)
+    print(f'G({center_pos_x}, {center_pos_y})')
 
     target_distance = cap.depth_frame.get_distance(center_pos_x, center_pos_y)
-    error_distance = (center_pos_x - cap.WIDTH / 2) / cap.WIDTH
-    r_motor -= error_distance * MAX_SPEED
-    l_motor += error_distance * MAX_SPEED
+    error_distance = (center_pos_x - TARGET_POS) / TARGET_POS
+    print(f'error: {error_distance}  |   target distance: {target_distance}')
 
-    params = f'{r_motor}, {l_motor}e'
+    r_motor = (1 - error_distance) / 2 * MAX_SPEED
+    l_motor = (1 + error_distance) / 2 * MAX_SPEED
+
+    params = f'{int(r_motor)},{int(l_motor)}e'
     send_serial(params)
 
-    cv2.namedWindow('RGB', cv2.WINDOW_AUTOSIZE)
-    cv2.imshow('RGB', color_frame)
-    cv2.namedWindow('MASK', cv2.WINDOW_AUTOSIZE)
-    cv2.imshow('MASK', mask)
+    mask_RGB = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
+    cv2.circle(mask_RGB, (center_pos_x, center_pos_y), 5, (0, 0, 255), thickness=-1)
+    cv2.line(mask_RGB, (TARGET_POS, 0), (TARGET_POS, cap.HEGIHT), (255, 0, 0))
+    images = np.hstack((color_frame, mask_RGB))
+    cv2.imshow('RGB', images)
 
-    if target_distance < 0.1:
+    if cv2.waitKey(200) & 0xFF == ord('q'):
         break
-    time.sleep(0.2)
+    if 0 < target_distance < 0.16 or mask_pixels / (mask.shape[0] * mask.shape[1]) > 0.3:
+        print('reached!')
+        break
+
+    # time.sleep(0.2)
+
+params = '0,0e'
+send_serial(params)
+cap.release()
+cv2.destroyAllWindows()
