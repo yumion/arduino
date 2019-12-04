@@ -14,6 +14,7 @@ int channel[7];
 
 void setup() {
   Serial.begin(9600);
+  Serial.setTimeout(50);
   TCCR2B &= B11111000;  // 3,11番ピンの周波数を980Hzに変更
   TCCR2B |= B00000011;  // r=32の場合
   pinMode(AIN1, OUTPUT);
@@ -23,7 +24,7 @@ void setup() {
 }
 
 
-void dc_motor_digital(int r_speeds, int l_speeds, int period=1000) {
+void dc_motor_digital(int r_speeds, int l_speeds, int period=100) {
   // IN1
   digitalWrite(AIN1, LOW);
   digitalWrite(BIN1, LOW);
@@ -55,8 +56,9 @@ void dc_motor_digital(int r_speeds, int l_speeds, int period=1000) {
 
 void loop() {
   /* serialで受け取った文字列をモータのパラメータに変換 */
-   if (Serial.available()) {
+  while (Serial.available()) {
     buf[i] = Serial.read();
+    Serial.println(i);
     if (buf[i] == 'e') {
       buf[i] = '\0';
       //Serial.println(buf);
