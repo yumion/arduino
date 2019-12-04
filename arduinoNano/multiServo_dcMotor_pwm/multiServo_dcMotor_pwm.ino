@@ -1,16 +1,20 @@
+#include <Servo.h>
+Servo GRASP;  // 手
+Servo HORIZONTAL;  // 腕の縦振り
+Servo VERTICAL;  // 腕の横スライド
+
 #define AIN1 3  // 右輪
 #define AIN2 11
 #define BIN1 5  // 左輪
 #define BIN2 6
 
-int i = 0;
-char buf[30];
-int channel[7];
+int channel[5];
 
-/* sample (default)
- * right wheel, left wheel 
- * 0,0e
- * Max:100(period)
+/* sample
+ * right wheel, left wheel,4本指,縦振り,横スライド
+ * DEFAULT: 0,0,80,60,90e
+ * MIN: 0,0,,0,0e
+ * MAX: 100,100,,180,180e
  */
 
 void setup() {
@@ -22,10 +26,14 @@ void setup() {
   pinMode(AIN2, OUTPUT);
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
+  GRASP.attach(4);
+  HORIZONTAL.attach(7);
+  VERTICAL.attach(8);
 }
 
 
 void dc_motor_digital(int r_speeds, int l_speeds, int period=100) {
+  /* control speed by digitalWrite like PWM */
   // IN1
   digitalWrite(AIN1, LOW);
   digitalWrite(BIN1, LOW);
@@ -52,53 +60,61 @@ void dc_motor_digital(int r_speeds, int l_speeds, int period=100) {
   // IN2
   digitalWrite(AIN2, LOW);
   digitalWrite(BIN2, LOW);
+//  Serial.println("speeds");
 }
 
 
-void loop() {
+void getMonitorInput(char buffer[], uint8_t maxSize=20) {
+  /* シリアルモニタから入力 */
+  memset(buffer, 0, maxSize);  // bufferの要素を0で初期化
+  while( Serial.available() == 0 ) {
+    delay(1);
+  }
+  uint8_t count = 0;
+  do
+  {
+    count += Serial.readBytes(buffer+count, maxSize);
+    delay(2);
+  } while( (count < maxSize) && !(Serial.available() == 0) );
+}
+
+
+void getInputValue(char buffer[]) {
   /* serialで受け取った文字列をモータのパラメータに変換 */
+  int i = 0;
   while (Serial.available()) {
-    buf[i] = Serial.read();
-    if (buf[i] == 'e') {
-      buf[i] = '\0';
+    buffer[i] = Serial.read();
+    if (buffer[i] == 'e') {
+      buffer[i] = '\0';
       //Serial.println(buf);
-      channel[0] = atoi(strtok(buf, ","));
-      for(int n=1; n<6; n++){
+      channel[0] = atoi(strtok(buffer, ","));
+      for(int n=1; n<sizeof(channel)/sizeof(int); n++){
         channel[n] = atoi(strtok(NULL, ","));
       }
-      for(int n=0; n<6; n++){
+      for(int n=0; n<sizeof(channel)/sizeof(int); n++){
         Serial.print("ch");
         Serial.print(n);
         Serial.print(": ");
         Serial.println(channel[n]);
       }
-      i = 0;
     }
     else {
       i++;
     }
   }
-  /* dc motor */
-//  dc_motor(channel[0], channel[1]);
+}
+
+
+void loop() {
+  /* get parameter from python */
+  char buf[21];
+  getInputValue(buf);
+  /* driver dc motor */
   dc_motor_digital(channel[0], channel[1]);
-
+  /* drive servo */
+  GRASP.write(channel[2]);
+  HORIZONTAL.write(channel[3]);
+  VERTICAL.write(channel[4]);
 }
 
-
-void dc_motor(int r_speeds, int l_speeds) {
-  analogWrite(AIN1, l_speeds);
-  analogWrite(AIN2, 0);
-  analogWrite(BIN1, r_speeds);
-  analogWrite(BIN2, 0);
-}
-
-
-void digital_pwm(int pin, float duty, float period=100000) {
-  float duty_rate = duty / 255.0;
-  float pulse_width = period * duty_rate;
-  digitalWrite(pin, LOW);
-  delayMicroseconds(period - pulse_width);
-  digitalWrite(pin, HIGH);
-  delayMicroseconds(pulse_width);
-}
 

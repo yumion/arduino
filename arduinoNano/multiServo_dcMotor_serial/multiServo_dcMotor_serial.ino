@@ -4,9 +4,9 @@ Servo sv2;
 Servo sv3;
 Servo sv4;
 
-#define AIN1 3
+#define AIN1 3  // 右輪
 #define AIN2 11
-#define BIN1 5
+#define BIN1 5  // 左輪
 #define BIN2 6
 
 int angle;
