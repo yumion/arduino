@@ -32,7 +32,7 @@ void setup() {
 }
 
 
-void dc_motor_digital(int r_speeds, int l_speeds, int period=100) {
+void dc_motor_forward(int r_speeds, int l_speeds, int period=100) {
   /* control speed by digitalWrite like PWM */
   // IN1
   digitalWrite(AIN1, LOW);
@@ -60,7 +60,41 @@ void dc_motor_digital(int r_speeds, int l_speeds, int period=100) {
   // IN2
   digitalWrite(AIN2, LOW);
   digitalWrite(BIN2, LOW);
-//  Serial.println("speeds");
+//  Serial.println("forward");
+}
+
+
+void dc_motor_backward(int r_speeds, int l_speeds, int period=100) {
+  /* BACKWARD */
+  r_speeds = abs(r_speeds);
+  l_speeds = abs(l_speeds);
+  // IN2
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN2, LOW);
+  if (r_speeds > l_speeds) {
+    delay(period - r_speeds);
+    digitalWrite(AIN2, HIGH); 
+    delay(r_speeds - l_speeds);
+    if (l_speeds != 0) {
+     digitalWrite(BIN2, HIGH); 
+    }
+    delay(l_speeds);
+  }
+  else {
+    delay(period - l_speeds);
+    if (l_speeds != 0) {
+     digitalWrite(BIN2, HIGH); 
+    }
+    delay(l_speeds - r_speeds);
+    if (r_speeds != 0) {
+     digitalWrite(AIN2, HIGH); 
+    }
+    delay(r_speeds);
+  }
+  // IN1
+  digitalWrite(AIN1, LOW);
+  digitalWrite(BIN1, LOW);
+//  Serial.println("backward");
 }
 
 
@@ -111,7 +145,12 @@ void loop() {
   char buf[21];
   getInputValue(buf);
   /* driver dc motor */
-  dc_motor_digital(channel[0], channel[1]);
+  if (channel[0] >= 0) {
+    dc_motor_forward(channel[0], channel[1]);
+  }
+  else {
+    dc_motor_backward(channel[0], channel[1]);
+  }
   /* drive servo */
   GRASP.write(map(channel[2], 0, 180, 145, 180));
   HORIZONTAL.write(map(channel[3], 0, 180, 55, 150));
