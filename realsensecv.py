@@ -22,7 +22,7 @@ class RealsenseCapture:
         self.align = rs.align(rs.stream.color)
         # Start streaming
         self.pipeline.start(self.config)
-        print('pipline start')
+        print('pipeline start')
 
     def read(self, is_filtered=False, raw_frame=False):
         # Flag capture available
@@ -54,7 +54,7 @@ class RealsenseCapture:
     def release(self):
         # Stop streaming
         self.pipeline.stop()
-        print('pipline stopped')
+        print('pipeline stopped')
 
     def filtering(self, frame):
         '''Filter setting'''

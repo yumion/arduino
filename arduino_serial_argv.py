@@ -10,16 +10,18 @@ import sys
 '''
 
 ser = serial.Serial(port=sys.argv[1], baudrate=9600)
-
+sleep(5)
 
 input_params = sys.argv[2]
 writer = input_params
-ser.write(writer.encode('utf-8'))
+for _ in range(5):
+    ser.write(writer.encode('utf-8'))
+    print(writer)
 
-sleep(2)
+'''
 while ser.inWaiting() > 0:
     read = ser.readline()
     read = read.strip().decode('utf-8')
     print(read)
-
+'''
 ser.close()
