@@ -26,6 +26,17 @@ def red_detect(img):
     return mask1 + mask2
 
 
+def green_detect(img):
+    '''緑色のマスク生成'''
+    # HSV色空間に変換
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    # 緑色のHSVの値域
+    hsv_min = np.array([30, 64, 0])
+    hsv_max = np.array([90, 255, 255])
+    mask = cv2.inRange(hsv, hsv_min, hsv_max)
+    return mask
+
+
 def calc_center(img):
     '''重心座標(x,y)を求める'''
     mu = cv2.moments(img, False)
@@ -42,37 +53,57 @@ def send_serial(params):
 cap.start()
 time.sleep(5)
 
-
-MAX_SPEED = 100
-GOAL_POS = 423
+ret, frames = cap.read(is_filtered=False)
+start_rgb = frames[0]
+start_depth = frames[1]
+start_depth_pixels = (start_depth > 0).sum()
 
 while True:
     ret, frames = cap.read(is_filtered=False)
     color_frame = frames[0]
     depth_frame = frames[1]
 
-    mask = red_detect(color_frame.copy())
-    mask_pixels = (mask > 0).sum()
-    print('Area: ', mask_pixels / (mask.shape[0] * mask.shape[1]))
-    center_pos_x, center_pos_y = calc_center(mask)
-    print(f'G({center_pos_x}, {center_pos_y})')
-
-    target_distance = cap.depth_frame.get_distance(center_pos_x, center_pos_y)
-    error_distance = (center_pos_x - GOAL_POS) / GOAL_POS
-    print(f'error: {error_distance}  |   target distance: {target_distance}')
-
-    params = f'10,10,180,0,90e'
-    send_serial(params)
-
-    mask_RGB = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
-    cv2.circle(mask_RGB, (center_pos_x, center_pos_y), 5, (0, 0, 255), thickness=-1)
-    images = np.hstack((color_frame, mask_RGB))
-    cv2.imshow('RGB', images)
-
+    images = np.hstack((color_frame, depth_frame))
+    cv2.imshow('RealSense', images)
     if cv2.waitKey(200) & 0xFF == ord('q'):
         break
 
-    # time.sleep(0.2)
+    depth_pixels = (depth_frame > 0).sum()
+    print('Depth value: ', depth_pixels)
+
+    params = '6,10,180,0,90e'
+    send_serial(params)
+
+    if depth_pixels / start_depth_pixels < 0.1:
+        '''ルールベースでつかむ'''
+        send_serial('6,10,180,0,90e')  # 距離を詰める
+        time.sleep(4)
+        send_serial('0,0,0,0,90e')  # つかむ
+        time.sleep(2)
+        send_serial('0,0,0,90,90e')  # 持ち上げる
+        break
+
+ret, frames = cap.read(is_filtered=False)
+color_frame = frames[0]
+depth_frame = frames[1]
+end_depth_pixels = (depth_frame > 0).sum()
+count = 0
+
+while True:
+    time.sleep(1)
+    ret, frames = cap.read(is_filtered=False)
+    color_frame = frames[0]
+    depth_frame = frames[1]
+    depth_pixels = (depth_frame > 0).sum()
+
+    if depth_pixels / end_depth_pixels < 0.1:
+        print('Failed')
+        break
+    elif count == 10:
+        print('Success')
+        break
+    count += 1
+
 
 params = '0,0,0,180,90e'
 send_serial(params)
