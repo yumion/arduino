@@ -46,9 +46,14 @@ def calc_center(img):
 
 def send_serial(params):
     '''シリアル通信'''
+    # default: 0,0,0,0,0e
+    # min: 0,0,0,0,-90e
+    # max: 100,100,100,100,90e
     ser.write(params.encode('utf-8'))
     print(f'send: {params}')
 
+
+CENTER_LINE = 423
 
 cap.start()
 time.sleep(5)
@@ -63,49 +68,60 @@ while True:
     color_frame = frames[0]
     depth_frame = frames[1]
 
+    mask = green_detect(color_frame.copy())
+    center_pos_x, center_pos_y = calc_center(mask)
+    # print(f'G({center_pos_x}, {center_pos_y})')
+    target_distance = cap.depth_frame.get_distance(center_pos_x, center_pos_y)
+
+    cv2.circle(color_frame, (center_pos_x, center_pos_y), 5, (0, 0, 255), thickness=-1)
+    cv2.line(color_frame, (CENTER_LINE, 0), (CENTER_LINE, cap.HEGIHT), (255, 0, 0))
     images = np.hstack((color_frame, depth_frame))
     cv2.imshow('RealSense', images)
     if cv2.waitKey(200) & 0xFF == ord('q'):
         break
 
+    vertical_pos = (0.0016 * target_distance * 100 - 0.0004) * (center_pos_x - CENTER_LINE)  # ピクセル間距離(cm)
+    # print('vertical position: ', vertical_pos)
+    vertical_deg = max(min(vertical_pos // 0.0216, 90), -90)  # 角度に変換して上限下限を制限
+
     depth_pixels = (depth_frame > 0).sum()
-    print('Depth value: ', depth_pixels)
+    print('Depth value: ', depth_pixels / start_depth_pixels)
 
-    params = '6,10,180,0,90e'
-    send_serial(params)
-
+    # Depth画像が真っ黒になるまで直進する
     if depth_pixels / start_depth_pixels < 0.1:
         '''ルールベースでつかむ'''
-        send_serial('6,10,180,0,90e')  # 距離を詰める
-        time.sleep(4)
-        send_serial('0,0,0,0,90e')  # つかむ
+        send_serial(f'7,10,100,0,{vertical_deg}e')  # 距離を詰める
+        time.sleep(4)  # 2cm
+        print('reached')
+        send_serial(f'0,0,0,0,{vertical_deg}e')  # つかむ
+        print('grasp')
         time.sleep(2)
-        send_serial('0,0,0,90,90e')  # 持ち上げる
+        send_serial(f'0,0,0,80,{vertical_deg}e')  # 持ち上げる
+        print('bring up')
+        time.sleep(2)
         break
+    else:
+        send_serial(f'7,10,100,0,{vertical_deg}e')  #
 
-ret, frames = cap.read(is_filtered=False)
-color_frame = frames[0]
-depth_frame = frames[1]
-end_depth_pixels = (depth_frame > 0).sum()
-count = 0
-
-while True:
-    time.sleep(1)
+for i in range(5):
     ret, frames = cap.read(is_filtered=False)
     color_frame = frames[0]
     depth_frame = frames[1]
-    depth_pixels = (depth_frame > 0).sum()
+    images = np.hstack((color_frame, depth_frame))
+    cv2.imshow('RealSense', images)
+    if cv2.waitKey(1000) & 0xFF == ord('q'):
+        break
 
-    if depth_pixels / end_depth_pixels < 0.1:
+    depth_pixels = (depth_frame > 0).sum()
+    print(f'count: {i} | {depth_pixels / start_depth_pixels}')
+
+    if depth_pixels / start_depth_pixels < 0.5:
+        # デプス画像の視界が開けなければ把持失敗
         print('Failed')
         break
-    elif count == 10:
-        print('Success')
-        break
-    count += 1
 
-
-params = '0,0,0,180,90e'
+print('Success')
+params = 'e'
 send_serial(params)
 ser.close()
 cap.release()

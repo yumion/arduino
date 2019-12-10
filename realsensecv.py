@@ -1,6 +1,7 @@
 # coding: utf-8
 import pyrealsense2 as rs
 import numpy as np
+import cv2
 
 
 class RealsenseCapture:
@@ -49,6 +50,7 @@ class RealsenseCapture:
             # Convert images to numpy arrays
             color_image = np.array(self.color_frame.get_data())
             depth_image = np.array(depth_colorized_frame.get_data())
+            # depth_colorized_image = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.08), cv2.COLORMAP_JET)
             return ret, (color_image, depth_image)
 
     def release(self):
