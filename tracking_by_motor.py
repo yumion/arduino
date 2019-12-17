@@ -32,17 +32,21 @@ def calc_center(img):
 
 # シリアル通信
 def send_serial(params):
+    '''シリアル通信'''
+    # default: 0,0,0,0,0e
+    # min: 0,0,0,0,-90e
+    # max: 100,100,100,100,90e
     ser.write(params.encode('utf-8'))
     print(f'send: {params}')
 
-
-cap.start()
-time.sleep(5)
 
 MAX_SPEED = 100
 GOAL_POS = 423
 r_motor = 0
 l_motor = 0
+
+cap.start()
+time.sleep(5)
 
 while True:
     ret, frames = cap.read(is_filtered=False)
@@ -57,13 +61,13 @@ while True:
 
     target_distance = cap.depth_frame.get_distance(center_pos_x, center_pos_y)
     error_distance = (center_pos_x - GOAL_POS) / GOAL_POS
-    print(f'error: {error_distance}  |   target distance: {target_distance}')
+    print(f'error: {error_distance} ({(0.0016 * target_distance * 100 + 0.0006) * abs(center_pos_x - GOAL_POS)}cm) |   target distance: {target_distance * 100}cm')
 
     r_motor = (1 - error_distance) / 2 * MAX_SPEED
     l_motor = (1 + error_distance) / 2 * MAX_SPEED
 
     params = f'{int(r_motor)},{int(l_motor)}e'
-    send_serial(params)
+    # send_serial(params)
 
     mask_RGB = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
     cv2.circle(mask_RGB, (center_pos_x, center_pos_y), 5, (0, 0, 255), thickness=-1)
@@ -79,7 +83,7 @@ while True:
 
     # time.sleep(0.2)
 
-params = '0,0,180,0,90e'
+params = 'e'
 send_serial(params)
 ser.close()
 cap.release()
