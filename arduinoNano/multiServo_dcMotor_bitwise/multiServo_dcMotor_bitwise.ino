@@ -135,10 +135,6 @@ void loop() {
         l_value = (input & B00011111) * 5;
         break;
         
-      case TERMINATE_bit:
-        dc_motor_forward(r_value, l_value);
-        break;
-        
       case GRASP_bit:
         GRASP.write(map(input & B00011111, 0, 1, 0, 50));
         break;
@@ -151,7 +147,7 @@ void loop() {
         VERTICAL.write((input & B00011111) * 10);
         
       default:
-        dc_motor_forward(0, 0);
+        dc_motor_forward(r_value, l_value);
     }
 }
 
