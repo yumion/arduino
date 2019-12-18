@@ -30,7 +30,6 @@ def calc_center(img):
     return x, y
 
 
-# シリアル通信
 def send_serial(motor, value, isreading=False):
     '''シリアル通信'''
     send = motor * 32 + value  # 8bitを10進数で表記
@@ -45,13 +44,18 @@ def send_serial(motor, value, isreading=False):
             print(read)
 
 
-MAX_SPEED = 100
+MAX_SPEED = 20
 GOAL_POS = 423
 r_motor = 0
 l_motor = 0
 
 cap.start()
 time.sleep(5)
+
+# default
+params = [r_motor, l_motor, 0, 0, 9]
+for i, param in enumerate(params):
+    send_serial(i, param, True)
 
 while True:
     ret, frames = cap.read(is_filtered=False)
@@ -71,10 +75,9 @@ while True:
     r_motor = (1 - error_distance) / 2 * MAX_SPEED
     l_motor = (1 + error_distance) / 2 * MAX_SPEED
 
-    params = [r_motor, l_motor]
+    params = [int(r_motor), int(l_motor)]
     for i, param in enumerate(params):
-        send_serial(i, param)
-    send_serial(5, 0, True)  # decide dc motor
+        send_serial(i, param, True)
 
     mask_RGB = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
     cv2.circle(mask_RGB, (center_pos_x, center_pos_y), 5, (0, 0, 255), thickness=-1)
@@ -91,7 +94,6 @@ while True:
 
 send_serial(0, 0)
 send_serial(1, 0)
-send_serial(5, 0)
 ser.close()
 cap.release()
 cv2.destroyAllWindows()

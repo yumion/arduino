@@ -47,12 +47,11 @@ while True:
         vertical = 0
         horizontal = 18
 
-    params = [0, 0, grasp, vertical, horizontal]
+    params = [r_motor, l_motor, grasp, vertical, horizontal]
     for i, param in enumerate(params):
-        send_serial(i, param)
-    send_serial(5, 0, True)  # decide dc motor
+        send_serial(i, param, True)
     print('-----------------')
-    time.sleep(1)
+    time.sleep(0.2)
 
 
 ser.close()

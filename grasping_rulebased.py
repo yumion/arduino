@@ -47,19 +47,29 @@ def calc_center(img):
     return x, y
 
 
-def send_serial(params):
+def send_serial(motor, value, isreading=False):
     '''シリアル通信'''
-    # default: 0,0,0,0,0e
-    # min: 0,0,0,0,-90e
-    # max: 100,100,100,100,90e
-    ser.write(params.encode('utf-8'))
-    print(f'send: {params}')
+    send = motor * 32 + value  # 8bitを10進数で表記
+    send = send.to_bytes(1, 'big')  # byteに変換(ASCIIで表示される)
+    ser.write(send)
+    print(f"send: {send}, int: {int.from_bytes(send, 'big')}, bit: {format(int.from_bytes(send, 'big'), '08b')}")
+    # read
+    if isreading:
+        while ser.inWaiting() > 0:
+            read = ser.readline()
+            read = read.strip().decode('utf-8')
+            print(read)
 
 
 CENTER_LINE = 423
 
 cap.start()
 time.sleep(5)
+
+# default
+params = [0, 0, 1, 0, 9]
+for i, param in enumerate(params):
+    send_serial(i, param, True)
 
 ret, frames = cap.read(is_filtered=False)
 start_rgb = frames[0]
@@ -85,7 +95,7 @@ while True:
 
     vertical_pos = (0.0016 * target_distance * 100 - 0.0004) * (center_pos_x - CENTER_LINE)  # ピクセル間距離(cm)
     # print('vertical position: ', vertical_pos)
-    vertical_deg = max(min(vertical_pos // 0.0216, 90), -90)  # 角度に変換して上限下限を制限
+    vertical_deg = (max(min(vertical_pos // 0.0216, 90), -90) + 90) // 10  # 角度に変換して上限下限を制限して-90~90を0~18に変換
 
     depth_pixels = (depth_frame > 0).sum()
     print('Depth value: ', depth_pixels / start_depth_pixels)
@@ -93,18 +103,27 @@ while True:
     # Depth画像が真っ黒になるまで直進する
     if depth_pixels / start_depth_pixels < 0.1:
         '''ルールベースでつかむ'''
-        send_serial(f'9,10,50,0,{vertical_deg},1e')  # 距離を詰める
+        params = [2, 2]  # 距離を詰める
+        for i, param in enumerate(params):
+            send_serial(i, param, True)
         time.sleep(4)  # 2cm
         print('reached')
-        send_serial(f'0,0,0,0,{vertical_deg},1e')  # つかむ
+
+        params = [0, 0, 0, 0]  # つかむ
+        for i, param in enumerate(params):
+            send_serial(i, param, True)
         print('grasp')
         time.sleep(2)
-        send_serial(f'0,0,0,50,{vertical_deg},1e')  # 持ち上げる
+
+        send_serial(3, 1, True)  # 持ち上げる
         print('bring up')
         time.sleep(2)
         break
     else:
-        send_serial(f'9,10,50,0,{vertical_deg},1e')  #
+        params = [2, 2, 1, 0, int(vertical_deg)]
+        for i, param in enumerate(params):
+            send_serial(i, param, True)
+
 
 for i in range(5):
     ret, frames = cap.read(is_filtered=False)
@@ -122,10 +141,13 @@ for i in range(5):
         # デプス画像の視界が開けなければ把持失敗
         print('Failed')
         break
+    if i == 4:
+        print('Success!')
 
-# print('Success')
-params = '0,0,0,0,0,1e'
-send_serial(params)
+params = [0, 0, 1, 0, 9]
+for i, param in enumerate(params):
+    send_serial(i, param, True)
+
 ser.close()
 cap.release()
 cv2.destroyAllWindows()
