@@ -24,6 +24,9 @@ def send_serial(motor, value, isreading=False):
 
 r_motor = 0
 l_motor = 0
+grasp = 0
+vertical = 0
+horizontal = 9
 
 time.sleep(5)
 
@@ -34,7 +37,17 @@ while True:
     else:
         r_motor = 0
         l_motor = 0
-    params = [r_motor, l_motor]
+
+    if grasp == 0:
+        grasp = 1
+        vertical = 1
+        horizontal = 1
+    else:
+        grasp = 0
+        vertical = 0
+        horizontal = 18
+
+    params = [0, 0, grasp, vertical, horizontal]
     for i, param in enumerate(params):
         send_serial(i, param)
     send_serial(5, 0, True)  # decide dc motor
