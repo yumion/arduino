@@ -31,13 +31,18 @@ def calc_center(img):
 
 
 # シリアル通信
-def send_serial(params):
+def send_serial(motor, value, isreading=False):
     '''シリアル通信'''
-    # default: 0,0,0,0,0e
-    # min: 0,0,0,0,-90e
-    # max: 100,100,100,100,90e
-    ser.write(params.encode('utf-8'))
-    print(f'send: {params}')
+    send = motor * 32 + value  # 8bitを10進数で表記
+    send = send.to_bytes(1, 'big')  # byteに変換(ASCIIで表示される)
+    ser.write(send)
+    print(f"send: {send}, int: {int.from_bytes(send, 'big')}, bit: {format(int.from_bytes(send, 'big'), '08b')}")
+    # read
+    if isreading:
+        while ser.inWaiting() > 0:
+            read = ser.readline()
+            read = read.strip().decode('utf-8')
+            print(read)
 
 
 MAX_SPEED = 100
@@ -66,8 +71,10 @@ while True:
     r_motor = (1 - error_distance) / 2 * MAX_SPEED
     l_motor = (1 + error_distance) / 2 * MAX_SPEED
 
-    params = f'{int(r_motor)},{int(l_motor)}e'
-    # send_serial(params)
+    params = [r_motor, l_motor]
+    for i, param in enumerate(params):
+        send_serial(i, param)
+    send_serial(5, 0, True)  # decide dc motor
 
     mask_RGB = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
     cv2.circle(mask_RGB, (center_pos_x, center_pos_y), 5, (0, 0, 255), thickness=-1)
@@ -83,8 +90,9 @@ while True:
 
     # time.sleep(0.2)
 
-params = 'e'
-send_serial(params)
+send_serial(0, 0)
+send_serial(1, 0)
+send_serial(5, 0)
 ser.close()
 cap.release()
 cv2.destroyAllWindows()

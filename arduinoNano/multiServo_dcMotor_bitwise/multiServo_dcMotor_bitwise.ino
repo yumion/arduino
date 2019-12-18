@@ -11,8 +11,8 @@ Servo VERTICAL;  // 腕の横スライド
 #define R_MOTOR_bit 0
 #define L_MOTOR_bit 32
 #define GRASP_bit 64
-#define VERTICAL_bit 96
-#define HORIZONTAL_bit 128
+#define HORIZONTAL_bit 96
+#define VERTICAL_bit 128
 #define TERMINATE_bit 160
 
 
@@ -140,15 +140,15 @@ void loop() {
         break;
         
       case GRASP_bit:
-        GRASP.write(map((input & B00011111) * 100, 0, 100, 0, 50));
+        GRASP.write(map(input & B00011111, 0, 1, 0, 50));
         break;
         
       case HORIZONTAL_bit:
-        HORIZONTAL.write(map((input & B00011111) * 10, 0, 100, 80, 83));
+        HORIZONTAL.write(map(input & B00011111, 0, 1, 60, 140));
         break;
         
       case VERTICAL_bit:
-        VERTICAL.write((input & B00011111) * 100);
+        VERTICAL.write((input & B00011111) * 10);
         
       default:
         dc_motor_forward(0, 0);
