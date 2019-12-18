@@ -8,13 +8,16 @@ Servo VERTICAL;  // 腕の横スライド
 #define BIN1 5  // 左輪
 #define BIN2 6
 
-int channel[6];
+#define R_MOTOR_bit 0
+#define L_MOTOR_bit 32
+#define GRASP_bit 64
+#define HORIZONTAL_bit 96
+#define VERTICAL_bit 128
+#define TERMINATE_bit 160
+
 
 /* sample
- * right wheel, left wheel,4本指,縦振り,横スライド
- * DEFAULT: 0,0,0,0,0e
- * MIN: 0,0,0,0,-90e
- * MAX: 100,100,100,100,90e
+モーターの種類(3bit)入力する値(5bit)
  */
 
 void setup() {
@@ -113,55 +116,43 @@ void getMonitorInput(char buffer[], uint8_t maxSize=20) {
 }
 
 
-void getInputValue(char buffer[]) {
-//  memset(buffer, 0, sizeof(buffer) / sizeof(int));
-  /* serialで受け取った文字列をモータのパラメータに変換 */
-  int i = 0;
-  while (Serial.available()) {
-    buffer[i] = Serial.read();
-//    Serial.println(buffer);
-    if (buffer[i] == 'e') {
-      buffer[i] = '\0';
-      channel[0] = atoi(strtok(buffer, ","));
-      for(int n=1; n<sizeof(channel)/sizeof(int); n++){
-        channel[n] = atoi(strtok(NULL, ","));
-      }
-      for(int n=0; n<sizeof(channel)/sizeof(int); n++){
-        Serial.print("ch");
-        Serial.print(n);
-        Serial.print(": ");
-        Serial.println(channel[n]);
-      }
-      Serial.println("---");
-    }
-    else {
-      i++;
-    }
-  }
-}
-
+short r_value = 0;
+short l_value = 0;
 
 void loop() {
   /* get parameter from python */
-  char buf[30];
-  getInputValue(buf);
-  
-//  if (channel[5] == 1) {
-    /* driver dc motor */
-    if (channel[0] >= 0) {
-      dc_motor_forward(channel[0], channel[1]);
+    short input = Serial.read();
+    if (input != -1) Serial.println((input & B00011111), DEC);
+//    delay(1000);
+
+    switch(input & B11100000) {
+      
+      case R_MOTOR_bit:
+        r_value = (input & B00011111) * 5;
+        break;
+
+      case L_MOTOR_bit:
+        l_value = (input & B00011111) * 5;
+        break;
+        
+      case TERMINATE_bit:
+        dc_motor_forward(r_value, l_value);
+        break;
+        
+      case GRASP_bit:
+        GRASP.write(map(input & B00011111, 0, 1, 0, 50));
+        break;
+        
+      case HORIZONTAL_bit:
+        HORIZONTAL.write(map(input & B00011111, 0, 1, 60, 140));
+        break;
+        
+      case VERTICAL_bit:
+        VERTICAL.write((input & B00011111) * 10);
+        
+      default:
+        dc_motor_forward(0, 0);
     }
-    else {
-      dc_motor_backward(channel[0], channel[1]);
-    }
-    /* drive servo */
-    GRASP.write(map(channel[2], 0, 100, 0, 50));
-    HORIZONTAL.write(map(channel[3], 0, 100, 58, 140));
-    VERTICAL.write(map(channel[4], -90, 90, 0, 180));
-//  }
-//  else {
-//    dc_motor_forward(0, 0);
-//  }
 }
 
 
