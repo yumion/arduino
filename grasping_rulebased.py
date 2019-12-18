@@ -143,6 +143,8 @@ for i in range(5):
         break
     if i == 4:
         print('Success!')
+        send_serial(3, 0, True)
+        time.sleep(3)
 
 params = [0, 0, 1, 0, 9]
 for i, param in enumerate(params):
