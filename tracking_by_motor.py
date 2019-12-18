@@ -8,7 +8,7 @@ import sys
 from realsensecv import RealsenseCapture
 
 
-ser = serial.Serial(port=sys.argv[1], baudrate=9600)
+ser = serial.Serial(port=sys.argv[1], baudrate=115200)
 cap = RealsenseCapture()
 
 
@@ -66,15 +66,14 @@ while True:
     r_motor = (1 - error_distance) / 2 * MAX_SPEED
     l_motor = (1 + error_distance) / 2 * MAX_SPEED
 
-    params = f'{int(r_motor)},{int(l_motor)}e'
-    # send_serial(params)
+    params = f'{int(r_motor)},{int(l_motor)},0,0,0,1e'
+    send_serial(params)
 
     mask_RGB = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
     cv2.circle(mask_RGB, (center_pos_x, center_pos_y), 5, (0, 0, 255), thickness=-1)
     cv2.line(mask_RGB, (GOAL_POS, 0), (GOAL_POS, cap.HEGIHT), (255, 0, 0))
     images = np.hstack((color_frame, mask_RGB))
     cv2.imshow('RGB', images)
-
     if cv2.waitKey(200) & 0xFF == ord('q'):
         break
     if 0 < target_distance < 0.16 or mask_pixels / (mask.shape[0] * mask.shape[1]) > 0.3:

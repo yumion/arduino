@@ -4,10 +4,13 @@ import numpy as np
 import serial
 import time
 import sys
+import os
+
 from realsensecv import RealsenseCapture
 
 
-ser = serial.Serial(port=sys.argv[1], baudrate=9600)
+os.system(f'sudo chmod 666 {sys.argv[1]}')
+ser = serial.Serial(port=sys.argv[1], baudrate=115200)
 cap = RealsenseCapture()
 
 
@@ -90,18 +93,18 @@ while True:
     # Depth画像が真っ黒になるまで直進する
     if depth_pixels / start_depth_pixels < 0.1:
         '''ルールベースでつかむ'''
-        send_serial(f'7,10,100,0,{vertical_deg}e')  # 距離を詰める
+        send_serial(f'9,10,50,0,{vertical_deg},1e')  # 距離を詰める
         time.sleep(4)  # 2cm
         print('reached')
-        send_serial(f'0,0,0,0,{vertical_deg}e')  # つかむ
+        send_serial(f'0,0,0,0,{vertical_deg},1e')  # つかむ
         print('grasp')
         time.sleep(2)
-        send_serial(f'0,0,0,80,{vertical_deg}e')  # 持ち上げる
+        send_serial(f'0,0,0,50,{vertical_deg},1e')  # 持ち上げる
         print('bring up')
         time.sleep(2)
         break
     else:
-        send_serial(f'7,10,100,0,{vertical_deg}e')  #
+        send_serial(f'9,10,50,0,{vertical_deg},1e')  #
 
 for i in range(5):
     ret, frames = cap.read(is_filtered=False)
@@ -120,8 +123,8 @@ for i in range(5):
         print('Failed')
         break
 
-print('Success')
-params = 'e'
+# print('Success')
+params = '0,0,0,0,0,1e'
 send_serial(params)
 ser.close()
 cap.release()
